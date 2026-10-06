@@ -40,12 +40,13 @@ entity register_file is
         -- read ports to be used by decoder (ID)
         rs1_addr : in  std_logic_vector(ADDR_W-1 downto 0);
         rs2_addr : in  std_logic_vector(ADDR_W-1 downto 0);
-        rs1_data : out unsigned(XLEN-1 downto 0);
-        rs2_data : out unsigned(XLEN-1 downto 0);
         -- write port, to be used by writeback mux in WB/mem
         we       : in  std_logic;
         rd_addr  : in  std_logic_vector(ADDR_W-1 downto 0);
-        rd_data  : in  unsigned(XLEN-1 downto 0)
+        rd_data  : in  unsigned(XLEN-1 downto 0);
+        --
+        rs1_data : out unsigned(XLEN-1 downto 0);
+        rs2_data : out unsigned(XLEN-1 downto 0)
     );
 end register_file;
 
@@ -75,12 +76,17 @@ begin
 
     -- x0 masking first, then write-through bypass, then the stored value.
   -- since x0 is checked first, this prevents the bipass activating for x0
-    rs1_data <= (others => '0') when unsigned(rs1_addr) = 0 else
-                rd_data when we = '1' and rd_addr = rs1_addr else
+  -- if data is being written (we=1), 
+    rs1_data <= (others => '0') when unsigned(rs1_addr) = 0 
+                else
+                rd_data when we = '1' and rd_addr = rs1_addr 
+                else
                 rs1_raw;
 
-    rs2_data <= (others => '0') when unsigned(rs2_addr) = 0 else
-                rd_data  when we = '1' and rd_addr = rs2_addr else
+    rs2_data <= (others => '0') when unsigned(rs2_addr) = 0 
+                else
+                rd_data  when we = '1' and rd_addr = rs2_addr 
+                else
                 rs2_raw;
 
 end Behavioral;

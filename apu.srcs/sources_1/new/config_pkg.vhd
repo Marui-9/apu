@@ -21,7 +21,6 @@
 
 library IEEE;
 library work;
-use work.core_pkg.all;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.MATH_REAL.ALL;
 
