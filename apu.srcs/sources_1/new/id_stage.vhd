@@ -48,7 +48,7 @@ begin
         
         instance_decoder : entity work.decoder
         port map(
-            --package all decoder outputs into pipeline reg formats and pass them
+--package all decoder outputs into pipeline reg formats and pass them
             inst => if_id_reg.inst,
             --for regfile
             rs1 => rs1_addr,  
@@ -76,11 +76,17 @@ begin
     
         );
         id_ex_next <= (
-    valid => if_id_reg.valid, cur_pc => if_id_reg.cur_pc, inst => if_id_reg.inst,
-            rs1_addr => rs1_addr, rs2_addr => rs2_addr, rd => rd,
+            valid => if_id_reg.valid, 
+            cur_pc => if_id_reg.cur_pc, 
+            inst => if_id_reg.inst,
+            rs1_addr => rs1_addr, 
+            rs2_addr => rs2_addr, 
+            rd => rd,
             rs1_data => rs1_data, rs2_data => rs2_data, imm => imm,
-            ex  => (alu_src_a => alu_src_a, alu_src_b => alu_src_b, aluop => aluop, branch_type => branch_type),
-            mem => (memread => memread, memwrite => memwrite, mem_size => mem_size),
+            ex  => (alu_src_a => alu_src_a, alu_src_b => alu_src_b, 
+            aluop => aluop, branch_type => branch_type),
+            mem => (memread => memread, 
+            memwrite => memwrite, mem_size => mem_size),
             wb  => (regwrite => regwrite, wb_sel => wb_sel)
         );
 end Behavioral;

@@ -81,21 +81,24 @@ begin
     
     instance_id : entity work.id_stage
         port map(
-            clk        => clk,
-            if_id_reg  => if_id_reg,
-            wb_we      => mem_wb_reg.wb.regwrite,
-            wb_rd_addr => mem_wb_reg.rd,
-            wb_rd_data => wb_data,
-            id_ex_next => id_ex_next
+        clk        => clk,
+        if_id_reg  => if_id_reg,
+        wb_we      => mem_wb_reg.wb.regwrite,
+        wb_rd_addr => mem_wb_reg.rd,
+        wb_rd_data => wb_data,
+        id_ex_next => id_ex_next
         );
-
+    instance_ex : entity work.ex_stage
+        port map (
+        id_ex_reg   => id_ex_reg,      
+        ex_mem_next => ex_mem_next,    
+        taken       => flush,      --core's flush signal
+        target      => branch_target   -- goes to if_stage's PC mux
+    );
     --//////////////////////////////
     --defaults and placeholders for what doesn't exist yet
     -- always assign bubbles and no stall or flus
     stall         <= '0';
-    flush         <= '0';
-    branch_target <= (others => '0');
-    ex_mem_next   <= ex_mem_bubble;
     mem_wb_next   <= mem_wb_bubble;
     
     dmem_addr  <= ex_mem_reg.ex_result;
