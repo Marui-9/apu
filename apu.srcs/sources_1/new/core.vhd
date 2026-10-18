@@ -95,17 +95,25 @@ begin
         taken       => flush,      --core's flush signal
         target      => branch_target   -- goes to if_stage's PC mux
     );
+    instance_mem : entity work.mem_stage
+    port map (
+        ex_mem_reg => ex_mem_reg, 
+        mem_wb_next => mem_wb_next,
+        dmem_addr => dmem_addr, dmem_wdata => dmem_wdata,
+        dmem_we => dmem_we, dmem_en => dmem_en
+        );
+    instance_wb : entity work.wb_stage
+    port map (
+        mem_wb_reg => mem_wb_reg,
+        dmem_rdata => dmem_rdata,
+        wb_data    => wb_data
+    );
+
     --//////////////////////////////
     --defaults and placeholders for what doesn't exist yet
     -- always assign bubbles and no stall or flus
     stall         <= '0';
-    mem_wb_next   <= mem_wb_bubble;
-    
-    dmem_addr  <= ex_mem_reg.ex_result;
-    dmem_wdata <= std_logic_vector(ex_mem_reg.store_data);
-    dmem_we    <= "0000";
-    dmem_en    <= ex_mem_reg.mem.memread or ex_mem_reg.mem.memwrite;
-    wb_data <= mem_wb_reg.ex_result;
+    --wb_data <= mem_wb_reg.ex_result;
 --///////////////////////////////////
 -- every stage takes the outputs of the stage before it and makes outputs for the
 -- stage after it. 

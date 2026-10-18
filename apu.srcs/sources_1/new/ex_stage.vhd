@@ -41,8 +41,8 @@ begin
     instance_alu : entity work.alu
     port map(
         op => id_ex_reg.ex.aluop,
-        R => id_ex_reg.rs1_data,
-        S => id_ex_reg.rs2_data,
+        R => op_a, 
+        S => op_b,
         F => alu_result
     );
     
