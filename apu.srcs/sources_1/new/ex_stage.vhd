@@ -10,8 +10,11 @@ use IEEE.NUMERIC_STD.ALL;
 entity ex_stage is 
     port(
         id_ex_reg : in id_ex_t;
-    --later also forwarding selects
-    --
+    rs1_fwd : in unsigned(XLEN-1 downto 0);
+    rs2_fwd : in unsigned(XLEN-1 downto 0);
+    --forwarded values are just rs1 and rs2, but taken from other stages if available
+    --so substitute to id_ex_reg.rs1 and rs2
+     --
         ex_mem_next : out ex_mem_t;
         taken : out std_logic;
         target : out unsigned(XLEN-1 downto 0)
@@ -31,10 +34,10 @@ begin
             else
             (others => '0')  when id_ex_reg.ex.alu_src_a=SRC_A_ZERO
             else
-            id_ex_reg.rs1_data;
+            rs1_fwd;
             
     op_b <= id_ex_reg.imm when  id_ex_reg.ex.alu_src_b = SRC_B_IMM else
-            id_ex_reg.rs2_data;
+            rs2_fwd;
             
      ex_result  <= link_s when id_ex_reg.wb.wb_sel = WB_PC4 else alu_result; 
 
@@ -50,8 +53,8 @@ begin
     port map(
         pc => id_ex_reg.cur_pc,
         branch_type => id_ex_reg.ex.branch_type,
-        rs1_val => id_ex_reg.rs1_data,
-        rs2_val => id_ex_reg.rs2_data,
+        rs1_val => rs1_fwd,
+        rs2_val => rs2_fwd,
         imm => id_ex_reg.imm,
          --
         taken => taken,
@@ -65,7 +68,7 @@ begin
         inst => id_ex_reg.inst,
         rd => id_ex_reg.rd,
         ex_result => ex_result,
-        store_data => id_ex_reg.rs2_data,
+        store_data => rs2_fwd,
         mem        => id_ex_reg.mem,
         wb         => id_ex_reg.wb
     );

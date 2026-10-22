@@ -51,6 +51,9 @@ end core;
 architecture Behavioral of core is
 --program counter
     signal pc_reg, pc_next : unsigned(XLEN-1 downto 0);  -- PC is its own register, in no record
+-- forwarding
+    signal rs1_fwd : unsigned(XLEN-1 downto 0);
+    signal rs2_fwd : unsigned(XLEN-1 downto 0);
 --pipeline registers
     signal if_id_next : if_id_t; --next is what is computed by the stage
     signal if_id_reg : if_id_t; -- reg is what the pip register contains
@@ -61,10 +64,10 @@ architecture Behavioral of core is
     signal mem_wb_next : mem_wb_t;
     signal mem_wb_reg : mem_wb_t;
 --
-    signal stall         : std_logic;                    -- hazard unit -> hold PC + IF/ID, bubble ID/EX
-    signal flush         : std_logic;                    -- EX taken -> bubble IF/ID + ID/EX
-    signal branch_target : unsigned(XLEN-1 downto 0);    -- EX -> pc_next when flush
-    signal wb_data       : unsigned(XLEN-1 downto 0);    -- WB mux -> regfile rd_data (and MEM/WB forwarding later)
+    signal stall         : std_logic;            -- hazard unit: hold PC + IF/ID, bubble ID/EX
+    signal flush         : std_logic;                   -- EX taken -> bubble IF/ID + IDEX
+    signal branch_target : unsigned(XLEN-1 downto 0);  -- EX: pc_next when flush
+    signal wb_data       : unsigned(XLEN-1 downto 0); -- WB mux -> regfile rd_data 
 begin
     instance_if: entity work.if_stage
         port map (
@@ -90,6 +93,8 @@ begin
         );
     instance_ex : entity work.ex_stage
         port map (
+        rs1_fwd => rs1_fwd,
+        rs2_fwd => rs2_fwd,
         id_ex_reg   => id_ex_reg,      
         ex_mem_next => ex_mem_next,    
         taken       => flush,      --core's flush signal
@@ -107,6 +112,15 @@ begin
         mem_wb_reg => mem_wb_reg,
         dmem_rdata => dmem_rdata,
         wb_data    => wb_data
+    );
+    instance_fw : entity work.fw_unit
+    port map (
+        wb_data    => wb_data,
+        id_ex_reg  => id_ex_reg,
+        ex_mem_reg => ex_mem_reg,
+        mem_wb_reg => mem_wb_reg,
+        rs1_fwd    => rs1_fwd,
+        rs2_fwd    => rs2_fwd
     );
 
     --//////////////////////////////
