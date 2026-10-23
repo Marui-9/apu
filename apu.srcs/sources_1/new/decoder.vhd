@@ -57,7 +57,7 @@ entity decoder is
     wb_sel    : out WB_SEL_T;
     --brnaches
     branch_type : out BRANCH_T; -- 6 branches + none + kal + jalr
-    -- for hazards (haz unit stalls when flags '1' and register numbers happen to
+    -- for hazards and fw (haz unit stalls when flags '1' and register numbers happen to
     -- match an older (previous, already in flight) load's rd
     uses_rs1 : out std_logic;
     uses_rs2 : out std_logic;

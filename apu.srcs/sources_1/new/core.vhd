@@ -63,6 +63,9 @@ architecture Behavioral of core is
     signal ex_mem_reg    : ex_mem_t;  
     signal mem_wb_next : mem_wb_t;
     signal mem_wb_reg : mem_wb_t;
+-- for hazard unit, out of decoder
+    signal uses_rs1 : std_logic;
+    signal uses_rs2 : std_logic;
 --
     signal stall         : std_logic;            -- hazard unit: hold PC + IF/ID, bubble ID/EX
     signal flush         : std_logic;                   -- EX taken -> bubble IF/ID + IDEX
@@ -89,7 +92,10 @@ begin
         wb_we      => mem_wb_reg.wb.regwrite,
         wb_rd_addr => mem_wb_reg.rd,
         wb_rd_data => wb_data,
-        id_ex_next => id_ex_next
+        id_ex_next => id_ex_next,
+        -- added for haz from decoder
+        uses_rs1 => uses_rs1,
+        uses_rs2 => uses_rs2
         );
     instance_ex : entity work.ex_stage
         port map (
@@ -122,12 +128,19 @@ begin
         rs1_fwd    => rs1_fwd,
         rs2_fwd    => rs2_fwd
     );
+    instance_hazard_unit : entity work.hazard_unit
+    port map (
+        uses_rs1     => uses_rs1,
+        uses_rs2     => uses_rs2,
+        id_ex_reg    => id_ex_reg,
+        id_ex_next   => id_ex_next,  
+        hazard_stall => stall
+    );
 
     --//////////////////////////////
     --defaults and placeholders for what doesn't exist yet
     -- always assign bubbles and no stall or flus
-    stall         <= '0';
-    --wb_data <= mem_wb_reg.ex_result;
+        --wb_data <= mem_wb_reg.ex_result;
 --///////////////////////////////////
 -- every stage takes the outputs of the stage before it and makes outputs for the
 -- stage after it. 

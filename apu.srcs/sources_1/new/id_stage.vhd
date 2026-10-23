@@ -16,7 +16,9 @@ entity id_stage is
         wb_rd_addr : in reg_addr;
         wb_rd_data  : in  unsigned(XLEN-1 downto 0);
         --
-        id_ex_next  : out id_ex_t --valid, pc, inst, alu-wb-regfile inputs
+        id_ex_next  : out id_ex_t; --valid, pc, inst, alu-wb-regfile inputs
+        uses_rs1 : out std_logic;
+        uses_rs2 : out std_logic
         --id_ex contains
     );
 end id_stage;
@@ -31,21 +33,20 @@ architecture Behavioral of id_stage is
     signal memread, memwrite, regwrite : std_logic;
     signal mem_size    : funct3_t;
     signal wb_sel      : WB_SEL_T;
-    signal uses_rs1, uses_rs2 : std_logic;-- may drop these for out ports instead
 begin
         instance_regfile: entity work.register_file
         port map (
-        clk => clk,
-        rs1_addr => rs1_addr,
-        rs2_addr => rs2_addr,
-        rs1_data => rs1_data,
-        rs2_data => rs2_data,
-        --from writeback
-        we    => wb_we,    
-        rd_addr  => wb_rd_addr,  
-        rd_data => wb_rd_data
+            clk => clk,
+            rs1_addr => rs1_addr,
+            rs2_addr => rs2_addr,
+            rs1_data => rs1_data,
+            rs2_data => rs2_data,
+            --from writeback
+            we    => wb_we,    
+            rd_addr  => wb_rd_addr,  
+            rd_data => wb_rd_data
         );
-        
+
         instance_decoder : entity work.decoder
         port map(
 --package all decoder outputs into pipeline reg formats and pass them
