@@ -33,7 +33,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity soc is
-    generic ( INIT_FILE : string := "test.mem" );
+    generic ( INIT_FILE : string := "test.mem";
+              MEM_SIZE : positive := 14 -- substitutes ADDR_WIDTH
+              ); 
     port (
         clk : in std_logic;
         rst : in std_logic
@@ -59,7 +61,10 @@ begin
         );
 
     instance_imem : entity work.memory
-        generic map ( INIT_FILE => INIT_FILE )
+        generic map (
+            INIT_FILE  => INIT_FILE,
+            ADDR_WIDTH => MEM_SIZE
+             )
         port map (
             clk   => clk,
             en    => '1',                      -- fetch every cycle
@@ -70,7 +75,10 @@ begin
         );
 
     instance_dmem : entity work.memory
-        generic map ( INIT_FILE => INIT_FILE )
+        generic map (
+            INIT_FILE  => INIT_FILE,
+            ADDR_WIDTH => MEM_SIZE
+        )
         port map (
             clk   => clk,
             en    => dmem_en,

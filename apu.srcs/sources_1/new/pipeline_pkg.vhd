@@ -99,6 +99,7 @@ end record;
 -- pipeline register 3: Execute-memory
 type ex_mem_t is record
     valid      : std_logic;
+    cur_pc : unsigned(XLEN-1 downto 0);
     inst: std_logic_vector(31 downto 0);
     rd         : reg_addr;
     ex_result  : unsigned(XLEN-1 downto 0);--address for loads/stores, or rd value for ex, or link address
@@ -110,6 +111,7 @@ end record;
 --MEM/WB
 --pipeline register 4: memory-writeback
 type mem_wb_t is record
+    cur_pc : unsigned(XLEN-1 downto 0);
     valid: std_logic; --see what instruction has finished
     rd        : reg_addr;  --register to write; forwarding compares it too
     ex_result : unsigned(XLEN-1 downto 0);
@@ -142,6 +144,7 @@ constant id_ex_bubble : id_ex_t := (
     
 constant ex_mem_bubble : ex_mem_t := (
     valid    => '0',
+    cur_pc   => (others => '0'),
     inst     => (others => '0'),
     rd       => (others => '0'),
     ex_result => (others => '0'),
@@ -152,6 +155,7 @@ constant ex_mem_bubble : ex_mem_t := (
 
 constant mem_wb_bubble : mem_wb_t := (
     valid    => '0',
+    cur_pc   => (others => '0'),
     rd       => (others => '0'),
     mem_size => (others => '0'),
     ex_result => (others => '0'),

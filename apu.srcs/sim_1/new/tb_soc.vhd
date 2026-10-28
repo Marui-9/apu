@@ -42,6 +42,6 @@ begin
     rst <= '1', '0' after 22 ns;   -- held for 2 edges, released between edges
 
     dut : entity work.soc
-        generic map ( INIT_FILE => "test.mem" )
+        generic map ( INIT_FILE => "test1.mem" )
         port map ( clk => clk, rst => rst );
 end sim;

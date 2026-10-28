@@ -65,6 +65,7 @@ begin
     
     ex_mem_next <= (
         valid => id_ex_reg.valid,
+        cur_pc => id_ex_reg.cur_pc,
         inst => id_ex_reg.inst,
         rd => id_ex_reg.rd,
         ex_result => ex_result,

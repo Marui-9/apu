@@ -40,7 +40,7 @@ use std.textio.all;
 entity memory is
     generic( -- default values for when the instance is not given any
         ADDR_WIDTH : positive := 14; -- not natural because cannot be negative
-        INIT_FILE : string := "test.mem"
+        INIT_FILE : string := "test1.mem"
     );
     port (
         clk   : in  std_logic;

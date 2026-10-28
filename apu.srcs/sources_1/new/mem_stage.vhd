@@ -74,6 +74,7 @@ begin
 
     mem_wb_next <= (
         valid     => ex_mem_reg.valid,
+        cur_pc => ex_mem_reg.cur_pc,
         rd        => ex_mem_reg.rd,
         ex_result => ex_mem_reg.ex_result, -- WB needs bits 1:0
         mem_size  => ex_mem_reg.mem.mem_size,

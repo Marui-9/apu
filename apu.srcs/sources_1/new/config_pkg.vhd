@@ -29,7 +29,8 @@ package config_pkg is
     constant SHAMT_W : integer := integer(ceil(log2(real(XLEN)))); 
     --log2 of real converts XLEN to a float and finds its log, then ceil rounds up to nearest integer
     -- that is for e.g. 27 bits -> 4,75 = 5 covers the whole range, then cast to integer
-    constant RST_VEC : std_logic_vector(XLEN-1 downto 0) := x"00000000"; -- or 16#00000000# if it was an integer
+    constant RST_VEC : std_logic_vector(XLEN-1 downto 0) := x"80000000"; --8000 0000 for spike and smoke test from risc official
+                                                                        --(needed to match jal and auipc results to spike)
     
 end package config_pkg;
 
