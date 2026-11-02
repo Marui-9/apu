@@ -1,0 +1,50 @@
+00500093   // 0x000  addi x1, x0, 5   ; x1 = 5
+00308113   // 0x004  addi x2, x1, 3     ; rs1 from EX/MEM -> 8
+002081b3   // 0x008  add  x3, x1, x2   ; rs1 from MEM/WB, rs2 from EX/MEM -> 13
+40118233   // 0x00C  sub  x4, x3, x1      ; rs1 from EX/MEM --> 8
+00100293   // 0x010  addi x5, x0, 1       
+00200293   // 0x014  addi x5, x0, 2     
+00528333   // 0x018  add  x6, x5, x5 ; must use 2 -> 4 (not 2, not 3)
+00900013   // 0x01C  addi x0, x0, 9     ; writes "9" to x0: must be discarded
+000003b3   // 0x020  add  x7, x0, x0   ; --> 0
+06400413   // 0x024  addi x8, x0, 100      
+00000013   // 0x028  nop                   
+00000013   // 0x02C  nop                   
+000404b3   // 0x030  add  x9, x8, x0; x8 being written in WB this cycle -> 100
+05500513   // 0x034  addi x10, x0, 0x55    
+20a02023   // 0x038  sw   x10, 512(x0)   ; mem[0x200] = 0x55
+20002583   // 0x03C  lw   x11, 512(x0)    ; x11 = 0x55
+00b58633   // 0x040  add  x12, x11, x11  ; STALL -> 0xAA
+20002683   // 0x044  lw   x13, 512(x0)    
+40d08733   // 0x048  sub  x14, x1, x13 ; STALL, rs2 hazard -> 5 - 0x55 = 0xFFFFFFB0
+20002783   // 0x04C  lw   x15, 512(x0)     
+00000013   // 0x050  nop                   
+00178833   // 0x054  add  x16, x15, x1  ; no stall -> 0x5A
+20002883   // 0x058  lw   x17, 512(x0)     
+21102223   // 0x05C  sw   x17, 516(x0)   ; STALL -> mem[0x204] = 0x55
+20002003   // 0x060  lw   x0, 512(x0)    
+00000933   // 0x064  add  x18, x0, x0   ; no stall -> 0
+20002d03   // 0x068  lw   x26, 512(x0)     
+000d09b7   // 0x06C  lui  x19, 0xD0  ; inst[19:15] = 26: must NOT stall -> 0x000D0000
+fff00a13   // 0x070  addi x20, x0, -1   ; 0xFFFFFFFF
+20002423   // 0x074  sw   x0, 520(x0)  ; mem[0x208] = 0
+214004a3   // 0x078  sb   x20, 521(x0)  ; byte 1 = FF       -> word 0x0000FF00
+21401523   // 0x07C  sh   x20, 522(x0)   ; bytes 2-3 = FFFF  -> word 0xFFFFFF00
+20900a83   // 0x080  lb   x21, 521(x0)   ; -> 0xFFFFFFFF
+20904b03   // 0x084  lbu  x22, 521(x0)  ; -> 0x000000FF
+20a01b83   // 0x088  lh   x23, 522(x0)  ; -> 0xFFFFFFFF
+20a05c03   // 0x08C  lhu  x24, 522(x0)  ; -> 0x0000FFFF
+20802c83   // 0x090  lw   x25, 520(x0)  ; -> 0xFFFFFF00
+00300d93   // 0x094  addi x27, x0, 3    ; loop counter
+00000e13   // 0x098  addi x28, x0, 0   ; iteration count
+001e0e13   // 0x09C  loop: addi x28, x28, 1      
+fffd8d93   // 0x0A0  addi x27, x27, -1     
+fe0d9ce3   // 0x0A4  bne  x27, x0, loop  ; rs1 from EX/MEM; taken twice, falls through once
+20002e83   // 0x0A8  lw   x29, 512(x0)     
+00ae8463   // 0x0AC  beq  x29, x10, skip ; STALL, then taken (0x55 == 0x55)
+00100e93   // 0x0B0  addi x29, x0, 1    ; must be flushed
+00000f17   // 0x0B4  skip: auipc x30, 0  ; x30 = pc of this auipc
+00cf0fe7   // 0x0B8  jalr x31, 12(x30)  ; rs1 from EX/MEM -> jump to auipc+12, x31 = auipc+8
+00100f13   // 0x0BC  addi x30, x0, 1    ; must be flushed
+21c02623   // 0x0C0  sw   x28, 524(x0)  ; mem[0x20C] = 3 (loop count)
+0000006f   // 0x0C4  done: jal  x0, done    ; loop forever
