@@ -38,13 +38,14 @@ entity core is
     clk : in std_logic;
     rst: in std_logic; --active high
     imem_rdata : in std_logic_vector(31 downto 0);
-    dmem_rdata : in std_logic_vector(31 downto 0); --loaded data
+    bus_rdata : in std_logic_vector(31 downto 0); 
     --
     imem_addr : out unsigned(31 downto 0);
-    dmem_en : out std_logic; -- avoids pointless reads when memread or memwrite are not active.
-    dmem_we : out std_logic_vector(3 downto 0);
-    dmem_addr : out unsigned(31 downto 0);
-    dmem_wdata : out std_logic_vector(31 downto 0)
+    bus_addr : out std_logic_vector(31 downto 0);
+    bus_wdata : out std_logic_vector(99 downto 0);
+    bus_we : out std_logic;
+    bus_re : out std_logic;
+    
     );
 end core;
 

@@ -56,8 +56,12 @@ begin
             clk => clk, rst => rst,
             imem_rdata => imem_rdata, dmem_rdata => dmem_rdata,
             imem_addr  => imem_addr,
-            dmem_en => dmem_en, dmem_we => dmem_we,
-            dmem_addr => dmem_addr, dmem_wdata => dmem_wdata
+            --peripheral bus drives
+            bus_addr => bus_addr,
+            bus_wdata => bus_wdata, 
+            bus_we => bus_we,
+            bus_re => bus_re,
+            bus_rdata => bus_rdata,
         );
 
     instance_imem : entity work.memory
@@ -74,18 +78,5 @@ begin
             rdata => imem_rdata
         );
 
-    instance_dmem : entity work.memory
-        generic map (
-            INIT_FILE  => INIT_FILE,
-            ADDR_WIDTH => MEM_SIZE
-        )
-        port map (
-            clk   => clk,
-            en    => dmem_en,
-            we    => dmem_we,
-            addr  => std_logic_vector(dmem_addr),
-            wdata => dmem_wdata,
-            rdata => dmem_rdata
-        );
 end Behavioral;
 
