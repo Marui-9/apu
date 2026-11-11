@@ -42,9 +42,9 @@ entity core is
     --
     imem_addr : out unsigned(31 downto 0);
     bus_addr : out std_logic_vector(31 downto 0);
-    bus_wdata : out std_logic_vector(99 downto 0);
-    bus_we : out std_logic;
-    bus_re : out std_logic;
+    bus_wdata : out std_logic_vector(31 downto 0);
+    bus_we : out std_logic_vector(3 downto 0) ;
+    bus_re : out std_logic
     
     );
 end core;
@@ -64,7 +64,7 @@ architecture Behavioral of core is
     signal ex_mem_reg    : ex_mem_t;  
     signal mem_wb_next : mem_wb_t;
     signal mem_wb_reg : mem_wb_t;
--- for hazard unit, out of decoder
+-- for hazard unit, out of decoder 
     signal uses_rs1 : std_logic;
     signal uses_rs2 : std_logic;
 --
@@ -111,13 +111,15 @@ begin
     port map (
         ex_mem_reg => ex_mem_reg, 
         mem_wb_next => mem_wb_next,
-        dmem_addr => dmem_addr, dmem_wdata => dmem_wdata,
-        dmem_we => dmem_we, dmem_en => dmem_en
+        bus_addr => bus_addr, 
+        bus_wdata => bus_wdata,
+        bus_we => bus_we, 
+        bus_re => bus_re
         );
     instance_wb : entity work.wb_stage
     port map (
         mem_wb_reg => mem_wb_reg,
-        dmem_rdata => dmem_rdata,
+        bus_rdata => bus_rdata,  
         wb_data    => wb_data
     );
     instance_fw : entity work.fw_unit
@@ -126,7 +128,7 @@ begin
         id_ex_reg  => id_ex_reg,
         ex_mem_reg => ex_mem_reg,
         mem_wb_reg => mem_wb_reg,
-        rs1_fwd    => rs1_fwd,
+        rs1_fwd    => rs1_fwd, 
         rs2_fwd    => rs2_fwd
     );
     instance_hazard_unit : entity work.hazard_unit

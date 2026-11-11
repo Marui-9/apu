@@ -33,25 +33,25 @@ entity mem_stage is
         ex_mem_reg  : in  ex_mem_t;
         --
         mem_wb_next : out mem_wb_t;
-        dmem_addr   : out unsigned(XLEN-1 downto 0);
-        dmem_wdata  : out std_logic_vector(XLEN-1 downto 0);
-        dmem_we     : out std_logic_vector(3 downto 0);
-        dmem_en     : out std_logic
+        bus_addr   : out std_logic_vector(XLEN-1 downto 0);
+        bus_wdata  : out std_logic_vector(XLEN-1 downto 0);
+        bus_we     : out std_logic_vector(3 downto 0);
+        bus_re     : out std_logic
     );
 end mem_stage;
 
 architecture Behavioral of mem_stage is
     alias addr_lo : unsigned(1 downto 0) is ex_mem_reg.ex_result(1 downto 0);
     signal sd     : std_logic_vector(XLEN-1 downto 0);
-begin
+begin 
     sd <= std_logic_vector(ex_mem_reg.store_data);
 
-    dmem_addr <= ex_mem_reg.ex_result;  -- full byte address, drop bits 1:0
-    dmem_en   <= ex_mem_reg.mem.memread or ex_mem_reg.mem.memwrite;
+    bus_addr <= std_logic_vector(ex_mem_reg.ex_result);  -- full byte address, drop bits 1:0  
+    bus_re   <= ex_mem_reg.mem.memread;
 
 -- case is only allowed inside a process so use a with statement
     -- replicate data into different width lanes
-    with ex_mem_reg.mem.mem_size(1 downto 0) select dmem_wdata <=
+    with ex_mem_reg.mem.mem_size(1 downto 0) select bus_wdata <= 
         sd(7 downto 0)  & sd(7 downto 0) & sd(7 downto 0) & sd(7 downto 0) when "00",   -- SB
         sd(15 downto 0) & sd(15 downto 0)                                  when "01",   -- SH
         sd                                                                 when others; -- SW
@@ -66,9 +66,9 @@ begin
             when others => mask := "1111";
         end case;
         if ex_mem_reg.mem.memwrite = '1' then
-            dmem_we <= mask;
-        else
-            dmem_we <= "0000";
+            bus_we <= mask;
+        else 
+            bus_we <= "0000";
         end if;
     end process;
 

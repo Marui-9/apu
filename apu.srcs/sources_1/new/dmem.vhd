@@ -37,7 +37,7 @@ use IEEE.NUMERIC_STD.ALL;
 use std.textio.all;
 use ieee.std_logic_textio.all; 
 
-entity memory is
+entity dmem is
     generic( -- default values for when the instance is not given any
         ADDR_WIDTH : positive := 14; -- not natural because cannot be negative
         INIT_FILE : string := "test1.mem"
@@ -45,15 +45,15 @@ entity memory is
     port (
         clk   : in  std_logic;
         --bus interface
-        re    : in  std_logic;
-        we    : in  std_logic_vector(3 downto 0); -- byte addressed, one enable per byte
-        addr  : in  std_logic_vector(31 downto 0);   -- word address
-        wdata : in  std_logic_vector(31 downto 0);
-        rdata : out std_logic_vector(31 downto 0)
+        re_dmem    : in  std_logic;
+        we_dmem    : in  std_logic_vector(3 downto 0); -- byte addressed, one enable per byte
+        addr_dmem  : in  std_logic_vector(31 downto 0);   -- word address
+        wdata_dmem : in  std_logic_vector(31 downto 0);
+        rdata_dmem : out std_logic_vector(31 downto 0)
     );
-end memory;
+end dmem;
 -- to instantiate at the same elvel as core, under a top_soc module
-architecture Behavioral of memory is
+architecture Behavioral of dmem is
     constant DEPTH : positive := 2**ADDR_WIDTH;
     type mem_t is array (0 to DEPTH-1) of std_logic_vector(31 downto 0);
 
@@ -73,21 +73,20 @@ end function;
     signal mem : mem_t := load_hex(INIT_FILE);
     signal idx : natural range 0 to DEPTH-1;
 begin
-    idx <= to_integer(unsigned(addr(ADDR_WIDTH+1 downto 2)));   -- drop byte offset bits 1:0
-
+    idx <= to_integer(unsigned(addr_dmem(ADDR_WIDTH+1 downto 2)));  
+    rdata <= x"00000000";
     process(clk)
     begin
         if rising_edge(clk) then
-            if re = '1' then
+            if re_dmem = '1' then
                 -- no loop, byte enables only matter for writes
-                rdata <= mem(idx); 
-            elsif we /= "0000" then 
+                rdata_dmem <= mem(idx); 
+            elsif we_dmem /= "0000" then  
                 for b in 0 to 3 loop
-                    if we(b) = '1' then
-                        mem(idx)(8*b+7 downto 8*b) <= rdata(8*b+7 downto 8*b);
+                    if we_dmem(b) = '1' then
+                        mem(idx)(8*b+7 downto 8*b) <= wdata_dmem(8*b+7 downto 8*b);
                     end if;
                 end loop;
-            else
             end if;
         end if;
     end process;
