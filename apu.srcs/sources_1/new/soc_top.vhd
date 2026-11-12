@@ -34,11 +34,14 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity soc is
     generic ( INIT_FILE : string := "test.mem";
-              MEM_SIZE : positive := 14 -- substitutes ADDR_WIDTH
+              MEM_SIZE : positive := 14; -- substitutes ADDR_WIDTH
+              CLK_FREQ : integer := 100000000;
+              BAUD_RATE : integer := 115200
               ); 
     port (
         clk : in std_logic;
-        rst : in std_logic
+        rst : in std_logic;
+        uart_tx : out std_logic
     );
 end soc;
 
@@ -94,7 +97,8 @@ begin
             addr => bus_addr,
             wdata => bus_wdata, 
             rdata => bus_rdata,
-            clint_mptip => clint_mtip
+            uart_tx => uart_tx,
+            clint_mtip => clint_mtip
         );
         
 end Behavioral;

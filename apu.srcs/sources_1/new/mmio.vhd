@@ -34,6 +34,8 @@ use IEEE.NUMERIC_STD.ALL;
 entity mmio is
     generic( -- default values for when the instance is not given any
         ADDR_WIDTH : positive := 14; -- not natural because cannot be negative
+        CLK_FREQ : integer := 100000000;
+        BAUD_RATE : integer := 115200;
         INIT_FILE : string := "test1.mem"
     );
     port (
@@ -44,6 +46,7 @@ entity mmio is
         we    : in  std_logic_vector(3 downto 0); -- byte addressed, one enable per byte
         addr  : in  std_logic_vector(31 downto 0);   -- word address
         wdata : in  std_logic_vector(31 downto 0);
+        uart_tx : out std_logic;
         rdata : out std_logic_vector(31 downto 0);
         clint_mtip : out std_logic
     );
@@ -60,10 +63,9 @@ architecture Behavioral of mmio is
 
     signal bus_rdata_clint : std_logic_vector(31 downto 0);
     signal clint_we : std_logic_vector(3 downto 0);
-    signal clint_re : std_logic;
     
     signal bus_rdata_uart : std_logic_vector(31 downto 0);
-    signal uart_re : std_logic;
+    signal uart_we : std_logic_vector(3 downto 0);
     
     signal sel_clint_next : std_logic;
     signal sel_dmem_next : std_logic;
@@ -93,6 +95,20 @@ begin
         wdata_dmem => wdata,
         rdata_dmem => bus_rdata_dmem
     );
+        instance_uart_top : entity work.uart_top
+        generic map(
+            CLK_FREQ => CLK_FREQ,
+            BAUD_RATE => BAUD_RATE
+        )
+        port map(
+            clk => clk,
+            rst => rst,
+            addr_uart => addr(3 downto 0),
+            we_uart => uart_we,
+            wdata_uart => wdata,
+            rdata_uart => bus_rdata_uart,
+            uart_tx => uart_tx
+        );
     --these outside of process
     sel_dmem_next  <= '1' when addr >= x"80000000" else '0';
     sel_clint_next <= '1' when addr >= x"02000000" and addr < x"80000000" else '0';
@@ -101,9 +117,11 @@ begin
     dmem_re  <= re when sel_dmem_next  = '1' else '0';
     dmem_we  <= we when sel_dmem_next  = '1' else "0000";
     clint_we <= we when sel_clint_next = '1' else "0000";
+    uart_we <= we when sel_uart_next = '1' else "0000";
     process(clk)
         begin 
-       
+        -- the address decode here does not need a reset, 
+        --and the peripherals do resets on their own
        --clint_mtip <= '0'; -- already assigned
             -- dmem
         if rising_edge(clk) then
@@ -121,5 +139,6 @@ begin
     end process;
      rdata <= bus_rdata_dmem  when sel_dmem_reg  = '1' else
      bus_rdata_clint when sel_clint_reg = '1' else
+     bus_rdata_uart when sel_uart_reg = '1' else
      (others => '0');                       -- unmapped address: reads 0
 end Behavioral;

@@ -62,6 +62,7 @@ begin
                     mtime <= mtime + 1;          -- +1 every cycle
                     --mtime_cmp <= wdata; 
                     if we_clint /= "0000" then
+                    --garbage is written into lower 16 bytes. It's fine since software only uses sw/lw, not sb or sh
                         case addr_clint is    
                             when x"4000" => mtime_cmp(31 downto 0) <= unsigned(wdata_clint);
                             when x"4004" => mtime_cmp(63 downto 32) <= unsigned(wdata_clint);
@@ -70,7 +71,7 @@ begin
                             when others => null;
                         end case;
                     else 
-                        case unsigned(addr_clint) is
+                        case addr_clint is
                             when x"4000" => rdata_clint <= std_logic_vector(mtime_cmp(31 downto 0));
                             when x"4004" => rdata_clint <= std_logic_vector(mtime_cmp(63 downto 32));
                             when x"BFF8" => rdata_clint <= std_logic_vector(mtime(31 downto 0));

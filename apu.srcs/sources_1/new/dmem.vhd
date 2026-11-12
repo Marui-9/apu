@@ -74,7 +74,6 @@ end function;
     signal idx : natural range 0 to DEPTH-1;
 begin
     idx <= to_integer(unsigned(addr_dmem(ADDR_WIDTH+1 downto 2)));  
-    rdata <= x"00000000";
     process(clk)
     begin
         if rising_edge(clk) then
