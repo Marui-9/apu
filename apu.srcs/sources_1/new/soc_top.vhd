@@ -41,6 +41,8 @@ entity soc is
     port (
         clk : in std_logic;
         rst : in std_logic;
+        uart_rx : in std_logic := '1';
+        --
         uart_tx : out std_logic
     );
 end soc;
@@ -98,6 +100,7 @@ begin
             wdata => bus_wdata, 
             rdata => bus_rdata,
             uart_tx => uart_tx,
+            uart_rx => uart_rx,
             clint_mtip => clint_mtip
         );
         

@@ -46,6 +46,8 @@ entity mmio is
         we    : in  std_logic_vector(3 downto 0); -- byte addressed, one enable per byte
         addr  : in  std_logic_vector(31 downto 0);   -- word address
         wdata : in  std_logic_vector(31 downto 0);
+        uart_rx : in std_logic := '1';
+        
         uart_tx : out std_logic;
         rdata : out std_logic_vector(31 downto 0);
         clint_mtip : out std_logic
@@ -66,6 +68,7 @@ architecture Behavioral of mmio is
     
     signal bus_rdata_uart : std_logic_vector(31 downto 0);
     signal uart_we : std_logic_vector(3 downto 0);
+    signal uart_re : std_logic;
     
     signal sel_clint_next : std_logic;
     signal sel_dmem_next : std_logic;
@@ -105,9 +108,11 @@ begin
             rst => rst,
             addr_uart => addr(3 downto 0),
             we_uart => uart_we,
+            re_uart => uart_re,
             wdata_uart => wdata,
             rdata_uart => bus_rdata_uart,
-            uart_tx => uart_tx
+            uart_tx => uart_tx,
+            uart_rx => uart_rx
         );
     --these outside of process
     sel_dmem_next  <= '1' when addr >= x"80000000" else '0';
@@ -118,6 +123,7 @@ begin
     dmem_we  <= we when sel_dmem_next  = '1' else "0000";
     clint_we <= we when sel_clint_next = '1' else "0000";
     uart_we <= we when sel_uart_next = '1' else "0000";
+    uart_re <= re when sel_uart_next = '1' else '0';
     process(clk)
         begin 
         -- the address decode here does not need a reset, 

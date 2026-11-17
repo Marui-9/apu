@@ -42,6 +42,7 @@ entity uart_rx is
         rx : in std_logic;
         --
         dout : out std_logic_vector(7 downto 0);
+        busy : out std_logic;
         stb : out std_logic
     );
 end uart_rx;
@@ -73,10 +74,12 @@ begin
                 when idle =>
                     msg <= (others => '0');
                     stb <= '0';
+                    busy <= '0'; 
                     if (rx_clocked = '0') then
                         rx_state <= start;
                     end if;
                 when start =>
+                    busy <= '1';
                     if (counter = CLKS_PER_BIT/2) then
                         counter <= 0;
                         if (rx_clocked = '0') then    
