@@ -55,6 +55,10 @@ architecture Behavioral of core is
 -- forwarding
     signal rs1_fwd : unsigned(XLEN-1 downto 0);
     signal rs2_fwd : unsigned(XLEN-1 downto 0);
+-- csr read (EX) and its forwarding
+    signal csr_rdata   : unsigned(XLEN-1 downto 0);  -- csr_regfile read for id_ex_reg.csr_addr
+    signal old_csr_fwd : unsigned(XLEN-1 downto 0);  -- csr_fw_unit -> ex_stage
+    signal mip_s       : unsigned(XLEN-1 downto 0) := (others => '0');  -- pending interrupts, none yet
 --pipeline registers
     signal if_id_next : if_id_t; --next is what is computed by the stage
     signal if_id_reg : if_id_t; -- reg is what the pip register contains
@@ -102,7 +106,8 @@ begin
         port map (
         rs1_fwd => rs1_fwd,
         rs2_fwd => rs2_fwd,
-        id_ex_reg   => id_ex_reg,      
+        old_csr_fwd => old_csr_fwd,
+        id_ex_reg   => id_ex_reg,
         ex_mem_next => ex_mem_next,    
         taken       => flush,      --core's flush signal
         target      => branch_target   -- goes to if_stage's PC mux
@@ -130,6 +135,28 @@ begin
         mem_wb_reg => mem_wb_reg,
         rs1_fwd    => rs1_fwd, 
         rs2_fwd    => rs2_fwd
+    );
+    -- csr read in EX, write at commit (mem_wb register). No same-cycle bypass inside
+    -- the regfile: csr_fw_unit covers the producers in ex_mem and mem_wb.
+    instance_csr_regfile : entity work.csr_regfile
+    port map (
+        clk     => clk,
+        rst     => rst,
+        raddr   => id_ex_reg.csr_addr,
+        rdata   => csr_rdata,
+        we      => mem_wb_reg.csr_we,
+        waddr   => mem_wb_reg.csr_addr,
+        wdata   => mem_wb_reg.csr_wdata,
+        mip_in  => mip_s,             -- tied to 0; to be driven by the clint once interrupts exist
+        illegal => open               -- until traps exist
+    );
+    instance_csr_fw : entity work.csr_fw_unit
+    port map (
+        csr_rdata   => csr_rdata,
+        id_ex_reg   => id_ex_reg,
+        ex_mem_reg  => ex_mem_reg,
+        mem_wb_reg  => mem_wb_reg,
+        old_csr_fwd => old_csr_fwd
     );
     instance_hazard_unit : entity work.hazard_unit
     port map (

@@ -93,6 +93,9 @@ type id_ex_t is record
     ex : ex_ctrl_t; --alu control values consumed here, not brought further
     mem: mem_ctrl_t; --carried to mem stage, need to be carried because pipelining
     wb : wb_ctrl_t; --carried to wb stage
+    csr_en   : std_logic;                     -- instruction is a csr one (must be '0' in bubbles)
+    csr_op   : funct3_t;                      -- funct3: 01 write, 10 set, 11 clear; bit 2 = immediate form
+    csr_addr : std_logic_vector(11 downto 0); -- csr read in EX, compared by csr_fw_unit
 end record;
 
 --EX/MEM
@@ -106,6 +109,10 @@ type ex_mem_t is record
     store_data : unsigned(XLEN-1 downto 0);-- value of rs2 after forwarding = what a store writes
     mem      : mem_ctrl_t; -- consumed here
     wb       : wb_ctrl_t;
+    -- csr write travelling to commit; forwarded by csr_fw_unit
+    csr_we    : std_logic;                       -- write really happens (rs1/uimm /= 0 rule included)
+    csr_addr  : std_logic_vector(11 downto 0);
+    csr_wdata : unsigned(XLEN-1 downto 0);       -- NEW csr value (not the old one that goes to rd)
 end record;
 
 --MEM/WB
@@ -118,6 +125,9 @@ type mem_wb_t is record
     mem_size : funct3_t; --loads: how many bytes, sign or zero extension
     wb       : wb_ctrl_t; -- enable and select for either execution result or loaded data
      inst: std_logic_vector(31 downto 0);
+    csr_we    : std_logic;                       -- csr regfile write enable at commit
+    csr_addr  : std_logic_vector(11 downto 0);
+    csr_wdata : unsigned(XLEN-1 downto 0);
 end record;
 
 
@@ -139,9 +149,12 @@ constant id_ex_bubble : id_ex_t := (
     imm      => (others => '0'),
     ex       => EX_CTRL_NOP,
     mem      => MEM_CTRL_NOP,
-    wb       => WB_CTRL_NOP
+    wb       => WB_CTRL_NOP,
+    csr_en   => '0',
+    csr_op   => (others => '0'),
+    csr_addr => (others => '0')
 );
-    
+
 constant ex_mem_bubble : ex_mem_t := (
     valid    => '0',
     cur_pc   => (others => '0'),
@@ -150,7 +163,10 @@ constant ex_mem_bubble : ex_mem_t := (
     ex_result => (others => '0'),
     store_data => (others => '0'),
     mem      => MEM_CTRL_NOP,
-    wb       => WB_CTRL_NOP
+    wb       => WB_CTRL_NOP,
+    csr_we    => '0',
+    csr_addr  => (others => '0'),
+    csr_wdata => (others => '0')
 );
 
 constant mem_wb_bubble : mem_wb_t := (
@@ -160,7 +176,39 @@ constant mem_wb_bubble : mem_wb_t := (
     mem_size => (others => '0'),
     ex_result => (others => '0'),
     wb       => WB_CTRL_NOP,
-    inst     => (others => '0')
+    inst     => (others => '0'),
+    csr_we    => '0',
+    csr_addr  => (others => '0'),
+    csr_wdata => (others => '0')
 );
+-- csr_mask: turns the value a csr instruction wants to write (new_csr) into the value the
+-- csr will really hold after the write (what a read returns). Applied in EX so that the
+-- value forwarded by csr_fw_unit is the same as what csr_regfile would read back.
+--   old_csr : current csr value (already forwarded), returned for ignored writes
+function csr_mask(addr    : std_logic_vector(11 downto 0);
+                  new_csr : unsigned(XLEN-1 downto 0);
+                  old_csr : unsigned(XLEN-1 downto 0)) return unsigned;
+
 end pipeline_pkg;
+
+package body pipeline_pkg is
+    function csr_mask(addr    : std_logic_vector(11 downto 0);
+                      new_csr : unsigned(XLEN-1 downto 0);
+                      old_csr : unsigned(XLEN-1 downto 0)) return unsigned is
+    begin
+        case addr is
+            when x"300" => return (new_csr and x"00000088") or x"00001800"; -- mstatus: MIE, MPIE; MPP = 11
+            when x"304" => return new_csr and x"00000888";                  -- mie: MSIE, MTIE, MEIE
+            when x"305" => return new_csr and x"FFFFFFFD";                  -- mtvec: mode 0/1 only
+            when x"340" => return new_csr;                                  -- mscratch
+            when x"341" => return new_csr and x"FFFFFFFC";                  -- mepc: IALIGN=32
+            when x"342" => return new_csr;                                  -- mcause
+            when x"343" => return new_csr;                                  -- mtval
+            when x"B00" => return new_csr;                                  -- mcycle
+            when x"B80" => return new_csr;                                  -- mcycleh
+            -- misa, mip, mhartid, cycle/cycleh (read-only) and unimplemented: write has no effect
+            when others => return old_csr;
+        end case;
+    end function;
+end package body pipeline_pkg;
 

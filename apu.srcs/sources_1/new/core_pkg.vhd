@@ -81,6 +81,13 @@ package core_pkg is
     constant FUNCT7_OP_SUB : funct7_t := "0100000";
     constant FUNCT7_OP_SRL : funct7_t := "0000000";
     constant FUNCT7_OP_SRA : funct7_t := "0100000";
+    --ZICSR--
+    constant FUNCT3_CSRRW : funct3_t := "001"; --000 is used by ecall and ebreak
+    constant FUNCT3_CSRRS : funct3_t := "010";
+    constant FUNCT3_CSRRC : funct3_t := "011";
+    constant FUNCT3_CSRRWI : funct3_t := "101";
+    constant FUNCT3_CSRRSI : funct3_t := "110";
+    constant FUNCT3_CSRRCI : funct3_t := "111";
     
     type ALU_OP is (ALU_ADD, ALU_SUB, ALU_AND, ALU_OR, ALU_XOR, ALU_SLL, ALU_SRL, ALU_SRA, ALU_SLT, ALU_SLTU);
     type INSTR_FORMAT is (R_TYPE, I_TYPE, S_TYPE, B_TYPE, U_TYPE, J_TYPE);

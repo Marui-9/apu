@@ -52,7 +52,7 @@ end register_file;
 
 architecture Behavioral of register_file is
     type reg_array is array (0 to 2**ADDR_W-1) of unsigned(XLEN-1 downto 0);
-    -- no reset on the array, so vivad omaps it to lutram
+    -- no reset on the array, so vivad omaps it to lutram (BRAM wants a synch reset, remember thesis)
     -- the bitstream itself loads an initial value:
     signal regs : reg_array := (others => (others => '0'));
 

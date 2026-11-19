@@ -63,9 +63,13 @@ entity decoder is
     uses_rs2 : out std_logic;
     -- for ordering of loads and stores
     fence : out std_logic; 
-    -- for privileged instruction spec
+    -- for privileged instruction spec later
     ecall  : out std_logic;   -- environment call, trap mcause 11
     ebreak : out std_logic;   -- breakpoint, trap mcause 3
+    -- for zicsr
+    csr_en : out std_logic;   -- instruction is a csr one (rs1 index comes from the rs1 output)
+    csr_addr : out std_logic_vector(11 downto 0);
+    csr_op : out funct3_t;
     -- for unrecognized opcode
     illegal : out std_logic
     );
@@ -98,6 +102,11 @@ architecture Behavioral of decoder is
             branch_type <= BR_NONE;
             uses_rs1    <= '0';
             uses_rs2    <= '0';
+            --
+            csr_en <= '0';
+            csr_addr <= (others => '0');
+            csr_op <= (others => '0');
+            --
             fence        <= '0';  
             illegal <= '0';
             ecall  <= '0';
@@ -197,13 +206,13 @@ architecture Behavioral of decoder is
                     alu_src_b <= SRC_B_IMM;
                     -- funct3 signals the branch type
                     case funct3 is
-                        when FUNCT3_BRANCH_BEQ  => branch_type <= BR_EQ;
+                        when FUNCT3_BRANCH_BEQ   => branch_type <= BR_EQ;
                         when FUNCT3_BRANCH_BNE  => branch_type <= BR_NE;
-                        when FUNCT3_BRANCH_BLT  => branch_type <= BR_LT;
+                        when FUNCT3_BRANCH_BLT   => branch_type <= BR_LT;
                         when FUNCT3_BRANCH_BGE  => branch_type <= BR_GE;
                         when FUNCT3_BRANCH_BLTU => branch_type <= BR_LTU;
                         when FUNCT3_BRANCH_BGEU => branch_type <= BR_GEU;
-                        when others             => illegal <= '1';    -- 010, 011
+                        when others      => illegal <= '1';    -- 010, 011
                     end case;
                     uses_rs1 <= '1';
                     uses_rs2 <= '1';
@@ -239,14 +248,14 @@ architecture Behavioral of decoder is
                     if funct7 = "0000000" then
                         case funct3 is
                             when FUNCT3_OP_ADD_SUB => aluop <= ALU_ADD;
-                            when FUNCT3_OP_SLL     => aluop <= ALU_SLL;
-                            when FUNCT3_OP_SLT     => aluop <= ALU_SLT;
-                            when FUNCT3_OP_SLTU    => aluop <= ALU_SLTU;
-                            when FUNCT3_OP_XOR     => aluop <= ALU_XOR;
+                            when FUNCT3_OP_SLL    => aluop <= ALU_SLL;
+                            when FUNCT3_OP_SLT  => aluop <= ALU_SLT;
+                            when FUNCT3_OP_SLTU   => aluop <= ALU_SLTU;
+                            when FUNCT3_OP_XOR   => aluop <= ALU_XOR;
                             when FUNCT3_OP_SRL_SRA => aluop <= ALU_SRL;
-                            when FUNCT3_OP_OR      => aluop <= ALU_OR;
-                            when FUNCT3_OP_AND     => aluop <= ALU_AND;
-                            when others            => null;
+                            when FUNCT3_OP_OR    => aluop <= ALU_OR;
+                            when FUNCT3_OP_AND    => aluop <= ALU_AND;
+                            when others      => null;
                         end case;
                     elsif funct7 = "0100000" then
                         case funct3 is
@@ -265,14 +274,25 @@ architecture Behavioral of decoder is
                     regwrite <= '1';
                     --defaults for rest
                 when OPCODE_SYSTEM =>
-                    -- RV32I: only ECALL/EBREAK. CSR instructions (Zicsr) and MRET/WFI
-                    -- (privileged spec) share this opcode and are illegal for now
+                    -- RV32I: only ECALL/EBREAK for now
                     if inst = x"00000073" then
                         ecall <= '1';
                     elsif inst = x"00100073" then
                         ebreak <= '1';
                     else
-                        illegal <= '1';
+                        case funct3 is
+                            when FUNCT3_CSRRW | FUNCT3_CSRRS | FUNCT3_CSRRC |
+                                 FUNCT3_CSRRWI | FUNCT3_CSRRSI | FUNCT3_CSRRCI =>
+                                csr_en   <= '1';
+                                csr_op   <= funct3;
+                                csr_addr <= inst(31 downto 20);
+                                regwrite <= '1';   -- old csr value goes to rd (wb_sel stays WB_ALU)
+                                -- register forms read rs1; immediate forms hold a uimm in that
+                                -- field, which must not trigger load-use stalls
+                                uses_rs1 <= not funct3(2);
+                            when others =>         -- 000 (mret/wfi/... not supported yet), 100
+                                illegal <= '1';
+                        end case;
                     end if;
                 when others => illegal <= '1';
             end case;

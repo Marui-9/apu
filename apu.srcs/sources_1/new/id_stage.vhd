@@ -33,6 +33,9 @@ architecture Behavioral of id_stage is
     signal memread, memwrite, regwrite : std_logic;
     signal mem_size    : funct3_t;
     signal wb_sel      : WB_SEL_T;
+    signal csr_en      : std_logic;
+    signal csr_op      : funct3_t;
+    signal csr_addr    : std_logic_vector(11 downto 0);
 begin
         instance_regfile: entity work.register_file
         port map (
@@ -70,9 +73,12 @@ begin
             branch_type => branch_type,
             uses_rs1    => uses_rs1,  
             uses_rs2  => uses_rs2,   
-            fence => open, 
-            ecall => open, 
-            ebreak => open, 
+            fence => open,
+            ecall => open,
+            ebreak => open,
+            csr_en => csr_en,
+            csr_addr => csr_addr,
+            csr_op => csr_op,
             illegal => open   -- until traps exist
     
         );
@@ -88,6 +94,9 @@ begin
             aluop => aluop, branch_type => branch_type),
             mem => (memread => memread, 
             memwrite => memwrite, mem_size => mem_size),
-            wb  => (regwrite => regwrite, wb_sel => wb_sel)
+            wb  => (regwrite => regwrite, wb_sel => wb_sel),
+            csr_en => csr_en,
+            csr_op => csr_op,
+            csr_addr => csr_addr
         );
 end Behavioral;

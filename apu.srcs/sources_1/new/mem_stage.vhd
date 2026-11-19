@@ -79,7 +79,10 @@ begin
         ex_result => ex_mem_reg.ex_result, -- WB needs bits 1:0
         mem_size  => ex_mem_reg.mem.mem_size,
         wb        => ex_mem_reg.wb,
-        inst      => ex_mem_reg.inst
+        inst      => ex_mem_reg.inst,
+        csr_we    => ex_mem_reg.csr_we,
+        csr_addr  => ex_mem_reg.csr_addr,
+        csr_wdata => ex_mem_reg.csr_wdata
     );
 end Behavioral;
 

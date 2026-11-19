@@ -14,6 +14,7 @@ entity ex_stage is
     rs2_fwd : in unsigned(XLEN-1 downto 0);
     --forwarded values are just rs1 and rs2, but taken from other stages if available
     --so substitute to id_ex_reg.rs1 and rs2
+    old_csr_fwd : in unsigned(XLEN-1 downto 0); -- current csr value, forwarded by csr_fw_unit
      --
         ex_mem_next : out ex_mem_t;
         taken : out std_logic;
@@ -28,6 +29,10 @@ architecture Behavioral of ex_stage is
     --branch unit
     signal link_s : unsigned(XLEN-1 downto 0);
     signal misaligned_s : std_logic;
+    --csr unit
+    signal new_csr_s : unsigned(XLEN-1 downto 0);  -- csr_unit: what the instruction asks for
+    signal csr_wdata_s : unsigned(XLEN-1 downto 0); -- csr_mask: what the csr will really hold
+    signal csr_we_s  : std_logic;
 begin
     --operand muxes: all alu_src_a_t and b cases
     op_a <= id_ex_reg.cur_pc when id_ex_reg.ex.alu_src_a=SRC_A_PC
@@ -39,7 +44,11 @@ begin
     op_b <= id_ex_reg.imm when  id_ex_reg.ex.alu_src_b = SRC_B_IMM else
             rs2_fwd;
             
-     ex_result  <= link_s when id_ex_reg.wb.wb_sel = WB_PC4 else alu_result; 
+     -- a csr instruction sends the OLD csr value to rd; wb_sel stays WB_ALU so
+     -- the WB stage and fw_unit treat it like any alu result
+     ex_result  <= old_csr_fwd when id_ex_reg.csr_en = '1' else
+                   link_s      when id_ex_reg.wb.wb_sel = WB_PC4 else
+                   alu_result;
 
     instance_alu : entity work.alu
     port map(
@@ -63,6 +72,20 @@ begin
         misaligned => misaligned_s
     );
     
+    instance_csr_unit : entity work.csr_unit
+    port map(
+        csr_en  => id_ex_reg.csr_en,
+        funct3  => id_ex_reg.csr_op,
+        old_csr => old_csr_fwd,
+        rs1_val => rs1_fwd,
+        rs1_idx => id_ex_reg.rs1_addr,  -- register index, or uimm for the immediate forms
+        --
+        new_csr => new_csr_s,
+        csr_we  => csr_we_s
+    );
+
+    csr_wdata_s <= csr_mask(id_ex_reg.csr_addr, new_csr_s, old_csr_fwd);
+
     ex_mem_next <= (
         valid => id_ex_reg.valid,
         cur_pc => id_ex_reg.cur_pc,
@@ -71,7 +94,10 @@ begin
         ex_result => ex_result,
         store_data => rs2_fwd,
         mem        => id_ex_reg.mem,
-        wb         => id_ex_reg.wb
+        wb         => id_ex_reg.wb,
+        csr_we     => csr_we_s and id_ex_reg.valid,  -- never commit a write for a bubble
+        csr_addr   => id_ex_reg.csr_addr,
+        csr_wdata  => csr_wdata_s
     );
         
 end Behavioral;
